@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Spider Clock</title>
+    <style>
+        body{
+            margin:0;
+            background:#050505;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+            font-family: Arial, sans-serif;
+        }
+        canvas{
+            filter:drop-shadow(0 0 10px #fa0);
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="s" width="600" height="600"></canvas>
+
+<script>
+const x = document.getElementById("s").getContext("2d"),
+      P = Math.PI,
+      C = Math.cos,
+      S = Math.sin,
+      R = 300;
+
+const L = (a, l, w, c, b) => {
+    x.strokeStyle = c;
+    x.lineWidth = w;
+    x.lineCap = x.lineJoin = "round";
+
+    let a1 = a + b,
+        a2 = a - b * .5;
+
+    x.beginPath();
+    x.moveTo(R, R);
+    x.lineTo(R + C(a1) * l * .3, R + S(a1) * l * .3);
+    x.lineTo(R + C(a2) * l * .7, R + S(a2) * l * .7);
+    x.lineTo(R + C(a) * l, R + S(a) * l);
+    x.stroke();
+};
+
+const D = () => {
+    x.clearRect(0, 0, 600, 600);
+    
+    const d = new Date();
+    const h = d.getHours() % 12;
+    const m = d.getMinutes();
+    const s = d.getSeconds();
+    const ms = d.getMilliseconds();
+    
+    // Calculate angles
+    const hAngle = (h * 30 + m * 0.5) * P / 180;
+    const mAngle = (m * 6 + s * 0.1) * P / 180;
+    const sAngle = (s * 6 + ms * 0.006) * P / 180;
+    
+    // Draw hour hand (8 legs)
+    for (let i = 0; i < 8; i++) {
+        const angle = hAngle + (i * P / 4);
+        L(angle, 150, 4, `hsl(${i * 45}, 100%, 50%)`, 0.3);
+    }
+    
+    // Draw minute hand (8 legs)
+    for (let i = 0; i < 8; i++) {
+        const angle = mAngle + (i * P / 4);
+        L(angle, 200, 3, `hsl(${i * 45 + 60}, 100%, 50%)`, 0.2);
+    }
+    
+    // Draw second hand (8 legs)
+    for (let i = 0; i < 8; i++) {
+        const angle = sAngle + (i * P / 4);
+        L(angle, 220, 2, `#fa0`, 0.15);
+    }
+    
+    // Draw center circle
+    x.fillStyle = "#fff";
+    x.beginPath();
+    x.arc(R, R, 8, 0, P * 2);
+    x.fill();
+    
+    x.strokeStyle = "#fa0";
+    x.lineWidth = 2;
+    x.beginPath();
+    x.arc(R, R, 8, 0, P * 2);
+    x.stroke();
+    
+    requestAnimationFrame(D);
+};
+
+D();
+</script>
+
+</body>
+</html>
