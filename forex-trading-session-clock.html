@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Window Weids - Forex Trading Session Clock</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #00ff41;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: glow 2s ease-in-out infinite;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            color: #00ff41;
+            text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 0.9em;
+            color: #00aa00;
+            opacity: 0.8;
+        }
+        
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41; }
+            50% { text-shadow: 0 0 20px #00ff41, 0 0 30px #00ff41, 0 0 40px #00ff41; }
+        }
+        
+        .clock-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        
+        canvas {
+            filter: drop-shadow(0 0 20px #00ff41) drop-shadow(0 0 40px rgba(0, 255, 65, 0.5));
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            background: rgba(15, 15, 30, 0.8);
+        }
+        
+        .sessions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .session-card {
+            background: rgba(26, 26, 46, 0.8);
+            border: 2px solid #00ff41;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .session-card:hover {
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+            transform: translateY(-5px);
+        }
+        
+        .session-card.active {
+            border-color: #00ff41;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.7);
+            background: rgba(0, 255, 65, 0.1);
+        }
+        
+        .session-card.closed {
+            opacity: 0.4;
+            border-color: #444;
+        }
+        
+        .session-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #00ff41;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .session-time {
+            font-size: 0.9em;
+            color: #00aa00;
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+        
+        .session-status {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .status-open {
+            background: rgba(0, 255, 65, 0.3);
+            color: #00ff41;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+        
+        .status-closed {
+            background: rgba(255, 50, 50, 0.2);
+            color: #ff3232;
+        }
+        
+        .status-closing-soon {
+            background: rgba(255, 200, 0, 0.2);
+            color: #ffc800;
+        }
+        
+        .status-opening-soon {
+            background: rgba(100, 200, 255, 0.2);
+            color: #64c8ff;
+        }
+        
+        .countdown {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #ffc800;
+        }
+        
+        .digital-time {
+            font-size: 1.1em;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 255, 65, 0.1);
+            border: 1px solid #00ff41;
+            border-radius: 4px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(26, 26, 46, 0.6);
+            border-radius: 8px;
+            border: 1px solid #00ff41;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .legend-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+        
+        .legend-dot.open {
+            background: #00ff41;
+            box-shadow: 0 0 10px #00ff41;
+        }
+        
+        .legend-dot.closed {
+            background: #444;
+        }
+        
+        .legend-dot.closing {
+            background: #ffc800;
+        }
+        
+        .legend-dot.opening {
+            background: #64c8ff;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #00aa00;
+            font-size: 0.85em;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>⚡ WINDOW WEIDS ⚡</h1>
+        <p>Global Forex Trading Session Monitor</p>
+    </div>
+    
+    <div class="clock-container">
+        <canvas id="sessionClock" width="500" height="500"></canvas>
+    </div>
+    
+    <div class="sessions-grid" id="sessionsGrid"></div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-dot open"></div>
+            <span>OPEN</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot closed"></div>
+            <span>CLOSED</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot closing"></div>
+            <span>CLOSING SOON</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot opening"></div>
+            <span>OPENING SOON</span>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>🌍 Real-time Forex Market Sessions | All times in GMT/UTC</p>
+    </div>
+</div>
+
+<script>
+    // Trading sessions data (GMT/UTC)
+    const sessions = [
+        { name: 'Tokyo', open: 0, close: 9, color: '#FF6B6B' },
+        { name: 'London', open: 8, close: 17, color: '#4ECDC4' },
+        { name: 'New York', open: 13, close: 22, color: '#45B7D1' },
+        { name: 'Sydney', open: 21, close: 6, color: '#FFA07A' } // wraps around
+    ];
+    
+    const canvas = document.getElementById('sessionClock');
+    const ctx = canvas.getContext('2d');
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = 180;
+    
+    function drawClock() {
+        // Clear canvas
+        ctx.fillStyle = 'rgba(15, 15, 30, 0.9)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const now = new Date();
+        const hours = now.getUTCHours();
+        const minutes = now.getUTCMinutes();
+        const seconds = now.getUTCSeconds();
+        const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+        const totalMinutes = hours * 60 + minutes;
+        
+        // Draw outer circle
+        ctx.strokeStyle = '#00ff41';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Draw 24-hour grid
+        ctx.strokeStyle = 'rgba(0, 255, 65, 0.2)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 24; i++) {
+            const angle = (i / 24) * Math.PI * 2 - Math.PI / 2;
+            const x1 = centerX + Math.cos(angle) * radius;
+            const y1 = centerY + Math.sin(angle) * radius;
+            const x2 = centerX + Math.cos(angle) * (radius + 20);
+            const y2 = centerY + Math.sin(angle) * (radius + 20);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            
+            // Draw hour labels
+            ctx.fillStyle = '#00ff41';
+            ctx.font = 'bold 12px Courier New';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const labelX = centerX + Math.cos(angle) * (radius + 35);
+            const labelY = centerY + Math.sin(angle) * (radius + 35);
+            ctx.fillText(i.toString().padStart(2, '0'), labelX, labelY);
+        }
+        
+        // Draw session arcs
+        sessions.forEach(session => {
+            const startAngle = (session.open / 24) * Math.PI * 2 - Math.PI / 2;
+            let endAngle = (session.close / 24) * Math.PI * 2 - Math.PI / 2;
+            
+            // Handle wrap-around sessions
+            if (session.close < session.open) {
+                ctx.strokeStyle = session.color;
+                ctx.lineWidth = 15;
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius - 30, startAngle, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius - 30, -Math.PI / 2, endAngle);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            } else {
+                ctx.strokeStyle = session.color;
+                ctx.lineWidth = 15;
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius - 30, startAngle, endAngle);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+        });
+        
+        // Draw current time needle
+        const currentAngle = (totalSeconds / 86400) * Math.PI * 2 - Math.PI / 2;
+        ctx.strokeStyle = '#00ff41';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(
+            centerX + Math.cos(currentAngle) * (radius - 40),
+            centerY + Math.sin(currentAngle) * (radius - 40)
+        );
+        ctx.stroke();
+        
+        // Draw center dot
+        ctx.fillStyle = '#00ff41';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw current time in center
+        ctx.fillStyle = '#00ff41';
+        ctx.font = 'bold 14px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        ctx.fillText(timeStr, centerX, centerY + 25);
+    }
+    
+    function updateSessions() {
+        const now = new Date();
+        const hours = now.getUTCHours();
+        const minutes = now.getUTCMinutes();
+        const secondsOfDay = hours * 3600 + minutes * 60 + now.getUTCSeconds();
+        
+        const grid = document.getElementById('sessionsGrid');
+        grid.innerHTML = '';
+        
+        sessions.forEach(session => {
+            const openSeconds = session.open * 3600;
+            const closeSeconds = session.close * 3600;
+            
+            let isOpen = false;
+            if (session.close > session.open) {
+                isOpen = secondsOfDay >= openSeconds && secondsOfDay < closeSeconds;
+            } else {
+                isOpen = secondsOfDay >= openSeconds || secondsOfDay < closeSeconds;
+            }
+            
+            // Calculate time until open/close
+            let timeUntil = 0;
+            let status = '';
+            
+            if (isOpen) {
+                if (session.close > session.open) {
+                    timeUntil = closeSeconds - secondsOfDay;
+                } else {
+                    if (secondsOfDay >= openSeconds) {
+                        timeUntil = (24 * 3600) - secondsOfDay + session.close * 3600;
+                    } else {
+                        timeUntil = closeSeconds - secondsOfDay;
+                    }
+                }
+                status = timeUntil < 3600 ? 'closing-soon' : 'open';
+            } else {
+                if (session.close > session.open) {
+                    if (secondsOfDay < openSeconds) {
+                        timeUntil = openSeconds - secondsOfDay;
+                    } else {
+                        timeUntil = (24 * 3600) - secondsOfDay + session.open * 3600;
+                    }
+                } else {
+                    if (secondsOfDay < openSeconds && secondsOfDay >= closeSeconds) {
+                        timeUntil = openSeconds - secondsOfDay;
+                    } else if (secondsOfDay >= openSeconds) {
+                        timeUntil = session.close * 3600 + (24 * 3600) - secondsOfDay;
+                    } else {
+                        timeUntil = closeSeconds - secondsOfDay;
+                    }
+                }
+                status = timeUntil < 3600 ? 'opening-soon' : 'closed';
+            }
+            
+            const hours = Math.floor(timeUntil / 3600);
+            const mins = Math.floor((timeUntil % 3600) / 60);
+            
+            const card = document.createElement('div');
+            card.className = `session-card ${isOpen ? 'active' : 'closed'}`;
+            card.innerHTML = `
+                <div class="session-name">${session.name}</div>
+                <div class="session-time">
+                    Open: ${session.open.toString().padStart(2, '0')}:00<br>
+                    Close: ${session.close.toString().padStart(2, '0')}:00
+                </div>
+                <div class="session-status status-${status}">
+                    ${isOpen ? '🟢 OPEN' : '🔴 CLOSED'}
+                </div>
+                ${status.includes('soon') ? `<div class="countdown">${status === 'closing-soon' ? '⏰ Closes in' : '⏰ Opens in'}: ${hours}h ${mins}m</div>` : ''}
+                <div class="digital-time">${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')}:${now.getUTCSeconds().toString().padStart(2, '0')} GMT</div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+    
+    function animate() {
+        drawClock();
+        updateSessions();
+        requestAnimationFrame(animate);
+    }
+    
+    animate();
+</script>
+
+</body>
+</html>
